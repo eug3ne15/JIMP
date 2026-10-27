@@ -6793,3 +6793,39 @@ form.inline-action-form {
     font-size: 0.75rem;
     color: #64748b;
 }
+
+/* ==========================================================================
+   Password Reset Account Recognition Box
+   ========================================================================== */
+
+
+.reset-account-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #166534;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.reset-account-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #14532d;
+    font-size: 0.95rem;
+    word-break: break-all;
+}
+
+.reset-account-pill svg {
+    color: var(--judiciary-green, #025532);
+    flex-shrink: 0;
+}
+
+.reset-account-name {
+    font-size: 0.82rem;
+    color: #15803d;
+    font-weight: 500;
+}
+
+
+

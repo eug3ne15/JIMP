@@ -48,9 +48,9 @@ Route::get('/forgot-password', function () {
 })->name('password.request');
 Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])
     ->name('password.email');
-Route::get('/reset-password/{token}', function (string $token) {
-    return view('auth.reset-password', ['token' => $token]);
-})->middleware('guest')->name('password.reset');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])
+    ->middleware('guest')
+    ->name('password.reset');
 Route::post('/reset-password', [PasswordResetController::class, 'reset'])
     ->middleware('guest')
     ->name('password.update');
