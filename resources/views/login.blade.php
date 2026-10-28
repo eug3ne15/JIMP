@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Judiciary Internship Management Portal</title>
+    <title>Login Page</title>
     @vite(['resources/css/app.css'])
 </head>
 <body class="login-page">
