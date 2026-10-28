@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -50,6 +51,11 @@ class AuthController extends Controller
             return back()->withErrors([
                 'email' => 'The provided credentials do not match our records.',
             ])->onlyInput('email');
+        }
+
+        // Clear any previous active session so OTP verification is not blocked by guest middleware
+        if (Auth::check()) {
+            Auth::logout();
         }
 
         // Credentials are valid: Send OTP code to user's email for verification

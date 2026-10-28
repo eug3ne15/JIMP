@@ -25,17 +25,25 @@ Route::get('/', function () {
     return view('welcome', compact('courses', 'departments'));
 });
 
-Route::get('/register', function () {
-    return view('register');
-});
-Route::post('/register', [AuthController::class, 'register'])
-    ->name('register');
+Route::middleware('guest')->group(function () {
+    Route::get('/register', function () {
+        return view('register');
+    });
+    Route::post('/register', [AuthController::class, 'register'])
+        ->name('register');
 
-Route::get('/login', function () {
-    return view('login');
-})->name('login');
-Route::post('/login', [AuthController::class, 'login'])
-    ->name('login');
+    Route::get('/login', function () {
+        return view('login');
+    })->name('login');
+    Route::post('/login', [AuthController::class, 'login'])
+        ->name('login');
+
+    Route::get('/login/otp', fn () => redirect()->route('login'))->name('otp.request.form');
+
+    Route::get('/login/otp/verify', [OtpController::class, 'showVerifyForm'])->name('otp.verify.form');
+    Route::post('/login/otp/verify', [OtpController::class, 'verify'])->name('otp.verify');
+    Route::post('/login/otp/resend', [OtpController::class, 'resend'])->name('otp.resend');
+});
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
@@ -99,11 +107,3 @@ Route::post('/logout', function () {
 
     return redirect()->route('login');
 })->name('logout');
-
-Route::middleware('guest')->group(function () {
-    Route::get('/login/otp', fn () => redirect()->route('login'))->name('otp.request.form');
-
-    Route::get('/login/otp/verify', [OtpController::class, 'showVerifyForm'])->name('otp.verify.form');
-    Route::post('/login/otp/verify', [OtpController::class, 'verify'])->name('otp.verify');
-    Route::post('/login/otp/resend', [OtpController::class, 'resend'])->name('otp.resend');
-});
