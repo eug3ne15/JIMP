@@ -182,4 +182,98 @@ class ApplicationEmailNotificationsTest extends TestCase
             return true;
         });
     }
+
+    public function test_intern_receives_acceptance_email_with_supervisor_name_and_email_when_accepted(): void
+    {
+        Notification::fake();
+
+        $intern = User::factory()->create([
+            'role' => 'intern',
+            'name' => 'Grace Intern',
+            'email' => 'grace@example.com',
+        ]);
+
+        $supervisor = User::factory()->create([
+            'role' => 'supervisor',
+            'name' => 'Hon. Justice Smith',
+            'email' => 'justice.smith@judiciary.go.ke',
+        ]);
+
+        $hr = User::factory()->create(['role' => 'hr']);
+        $course = Course::create(['name' => 'Commercial Court Internship']);
+
+        $application = Application::create([
+            'user_id' => $intern->id,
+            'course_id' => $course->id,
+            'applicant_name' => 'Grace Intern',
+            'institution' => 'University of Nairobi',
+            'status' => 'pending',
+        ]);
+
+        // HR marks application as accepted and assigns supervisor
+        $response = $this->actingAs($hr)->put(route('hr.intern.update', $application), [
+            'status' => 'accepted',
+            'supervisor_id' => $supervisor->id,
+            'hr_comment' => 'Welcome to the Commercial Division.',
+        ]);
+
+        $response->assertRedirect();
+
+        Notification::assertSentTo($intern, ApplicationStatusUpdated::class, function ($notification) use ($intern, $supervisor, $course) {
+            $mail = $notification->toMail($intern);
+
+            $this->assertStringContainsString('Accepted', $mail->subject);
+            $this->assertStringContainsString($course->name, $mail->subject);
+
+            $mailBody = implode(' ', $mail->introLines);
+            $this->assertStringContainsString('accepted', $mailBody);
+            $this->assertStringContainsString($supervisor->name, $mailBody);
+            $this->assertStringContainsString($supervisor->email, $mailBody);
+
+            return true;
+        });
+    }
+
+    public function test_intern_receives_acceptance_email_without_supervisor_when_not_yet_assigned(): void
+    {
+        Notification::fake();
+
+        $intern = User::factory()->create([
+            'role' => 'intern',
+            'name' => 'Faith Intern',
+            'email' => 'faith@example.com',
+        ]);
+
+        $hr = User::factory()->create(['role' => 'hr']);
+        $course = Course::create(['name' => 'Appellate Division Internship']);
+
+        $application = Application::create([
+            'user_id' => $intern->id,
+            'course_id' => $course->id,
+            'applicant_name' => 'Faith Intern',
+            'institution' => 'Kenyatta University',
+            'status' => 'pending',
+        ]);
+
+        // HR marks application as accepted without assigning supervisor immediately
+        $response = $this->actingAs($hr)->put(route('hr.intern.update', $application), [
+            'status' => 'accepted',
+            'hr_comment' => 'Accepted for Court of Appeal placement.',
+        ]);
+
+        $response->assertRedirect();
+
+        Notification::assertSentTo($intern, ApplicationStatusUpdated::class, function ($notification) use ($intern, $course) {
+            $mail = $notification->toMail($intern);
+
+            $this->assertStringContainsString('Accepted', $mail->subject);
+            $this->assertStringContainsString($course->name, $mail->subject);
+
+            $mailBody = implode(' ', $mail->introLines);
+            $this->assertStringContainsString('accepted', $mailBody);
+            $this->assertStringContainsString('Your assigned supervisor and reporting schedule will be communicated to you shortly', $mailBody);
+
+            return true;
+        });
+    }
 }

@@ -27,7 +27,7 @@ class InternController extends Controller
             $courseId = $request->integer('course_id');
             $query->where(function ($q) use ($courseId) {
                 $q->where('course_id', $courseId)
-                  ->orWhereHas('internship', fn ($iq) => $iq->where('course_id', $courseId));
+                    ->orWhereHas('internship', fn ($iq) => $iq->where('course_id', $courseId));
             });
         }
 
@@ -80,7 +80,7 @@ class InternController extends Controller
     public function update(Request $request, Application $intern)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,info_requested,rejected,shortlisted, accepted',
+            'status' => ['required', 'in:pending,info_requested,rejected,shortlisted,accepted'],
             'applicant_name' => 'nullable|string|max:50',
             'institution' => 'nullable|string|max:255',
             'supervisor_id' => 'nullable|exists:users,id',
@@ -147,9 +147,9 @@ class InternController extends Controller
                 $updateData['internship_id'] = $internship->id;
             }
 
-            // If application is still pending, automatically approve/shortlist upon supervisor assignment
-            if ($intern->status === 'pending' && (!isset($validated['status']) || $validated['status'] === 'pending')) {
-                $updateData['status'] = 'shortlisted' || 'accepted';
+            // If application is still pending, automatically accept upon supervisor assignment
+            if ($intern->status === 'pending' && (! isset($validated['status']) || $validated['status'] === 'pending')) {
+                $updateData['status'] = 'accepted';
             }
 
             if ($previousSupervisorId !== $supervisorId) {
@@ -166,24 +166,24 @@ class InternController extends Controller
         }
 
         $intern->update($updateData);
+        $intern->refresh()->load(['user', 'course', 'internship.supervisor']);
 
         // Notify supervisor if newly assigned or reassigned
         if ($assignedSupervisor && $assignedSupervisor->role === 'supervisor') {
             try {
-                $intern->load(['user', 'course']);
                 $internship = $intern->internship ?? $internship ?? null;
                 $assignedSupervisor->notify(new InternAssignedToSupervisor($intern, $internship));
             } catch (\Throwable $e) {
-                Log::warning("Could not send supervisor assignment email: " . $e->getMessage());
+                Log::warning('Could not send supervisor assignment email: '.$e->getMessage());
             }
         }
 
         // Notify intern
-        if (isset($validated['status']) && $intern->user) {
+        if (isset($updateData['status']) && $intern->user) {
             try {
                 $intern->user->notify(new ApplicationStatusUpdated($intern));
             } catch (\Throwable $e) {
-                Log::warning("Could not send application status email: " . $e->getMessage());
+                Log::warning('Could not send application status email: '.$e->getMessage());
             }
         }
 

@@ -11,9 +11,7 @@ class ApplicationStatusUpdated extends Notification
 {
     use Queueable;
 
-    public function __construct(public Application $application)
-    {
-    }
+    public function __construct(public Application $application) {}
 
     public function via(object $notifiable): array
     {
@@ -29,19 +27,38 @@ class ApplicationStatusUpdated extends Notification
         $mail = new MailMessage;
 
         switch ($status) {
+            case 'accepted':
+                $supervisor = $this->application->internship?->supervisor;
+                $mail->subject("Congratulations! You Have Been Accepted: {$courseName}")
+                    ->greeting("Hello {$applicantName},")
+                    ->line("Congratulations! We are delighted to inform you that your application for **{$courseName}** under the Judiciary Internship Programme has been **accepted**.")
+                    ->line('Your placement with the Judiciary of Kenya has been officially confirmed.');
+
+                if ($supervisor) {
+                    $mail->line('---')
+                        ->line('**Your Assigned Supervisor Details:**')
+                        ->line("• **Supervisor Name:** {$supervisor->name}")
+                        ->line("• **Supervisor Email:** {$supervisor->email}")
+                        ->line('Please contact your supervisor directly via email to coordinate your reporting date, induction, and work schedule.')
+                        ->line('---');
+                } else {
+                    $mail->line('Your assigned supervisor and reporting schedule will be communicated to you shortly by Judiciary Human Resources.');
+                }
+                break;
+
             case 'shortlisted':
                 $mail->subject("Congratulations! Your Judiciary Internship Application has been Approved: {$courseName}")
                     ->greeting("Hello {$applicantName},")
                     ->line("We are pleased to inform you that your application for **{$courseName}** has been **approved and shortlisted** for the Judiciary Internship Programme.")
-                    ->line("Our Human Resources team has reviewed and vetted your academic qualifications and supporting documents.")
-                    ->line("Next Steps: Judiciary Human Resources will contact you regarding your deployment schedule, induction details, and supervisor assignment.");
+                    ->line('Our Human Resources team has reviewed and vetted your academic qualifications and supporting documents.')
+                    ->line('Next Steps: Judiciary Human Resources will contact you regarding your deployment schedule, induction details, and supervisor assignment.');
                 break;
 
             case 'rejected':
                 $mail->subject("Update on your Judiciary Internship Application: {$courseName}")
                     ->greeting("Hello {$applicantName},")
                     ->line("Thank you for your interest and application for the **{$courseName}** position under the Judiciary Internship Programme.")
-                    ->line("After careful review and vetting of all applications, we regret to inform you that your application was **not successful** for this intake.");
+                    ->line('After careful review and vetting of all applications, we regret to inform you that your application was **not successful** for this intake.');
 
                 if ($this->application->rejection_reason) {
                     $mail->line("Reason for Decision: {$this->application->rejection_reason}");
@@ -52,7 +69,7 @@ class ApplicationStatusUpdated extends Notification
                 $mail->subject("Action Required: Additional Details Needed for your Internship Application - {$courseName}")
                     ->greeting("Hello {$applicantName},")
                     ->line("The Judiciary Human Resources department has reviewed your application for **{$courseName}** and **requires you to provide additional information or updated documents** before your application can be vetted further.")
-                    ->line("Please review the HR remarks below and update your application details promptly.");
+                    ->line('Please review the HR remarks below and update your application details promptly.');
                 break;
 
             default:

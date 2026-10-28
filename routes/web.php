@@ -14,7 +14,9 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
 use App\Http\Controllers\Supervisor\EvaluationController as SupervisorEvaluationController;
 use App\Models\Course;
+use App\Http\Controllers\Auth\OtpController;
 use Illuminate\Support\Facades\Route;
+
 
 Route::get('/', function () {
     $departments = \App\Models\Department::with(['roles' => fn ($q) => $q->where('status', 'open')->orderBy('name')])->orderBy('name')->get();
@@ -97,3 +99,11 @@ Route::post('/logout', function () {
 
     return redirect()->route('login');
 })->name('logout');
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login/otp', fn () => redirect()->route('login'))->name('otp.request.form');
+
+    Route::get('/login/otp/verify', [OtpController::class, 'showVerifyForm'])->name('otp.verify.form');
+    Route::post('/login/otp/verify', [OtpController::class, 'verify'])->name('otp.verify');
+    Route::post('/login/otp/resend', [OtpController::class, 'resend'])->name('otp.resend');
+});
